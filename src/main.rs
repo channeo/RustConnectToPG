@@ -1,5 +1,7 @@
-use actix_wed :: {web::data, App,Httpserver};
+use actix_web::{web::{self, Data}, App, HttpServer};
+
 use dotenv::dotenv;
+use services::{fetch_users, fetch_user_articles, create_user_article};
 use sqlx::{postgres::PgPoolOptions, Pool, Postgres};
 
 
@@ -8,27 +10,27 @@ mod services;
 
 
 pub struct AppState {
-    pub db_pool: Pool<Postgres>,
+    pub db: Pool<Postgres>,
 }
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     dotenv().ok();
 
-    let db_pool = PgPoolOptions::new()
+    let pool = PgPoolOptions::new()
         .max_connections(5)
         .connect(&std::env::var("DATABASE_URL").expect("DATABASE_URL must be set"))
         .await
         .expect("Failed to create database pool");
 
-    let app_state = data(AppState { db_pool });
-
     HttpServer::new(move || {
         App::new()
-            .app_data(app_state.clone())
-            .configure(services::config)
+            .app_data(Data::new(AppState{db:pool.clone()}))
+            .service(fetch_users)
+            .service(fetch_user_articles)
+            .service(create_user_article)
     })
-    .bind("127.0.0.1", 8080).
-    run()
+    .bind(("127.0.0.1", 8080))?
+    .run()
     .await
     .expect("Failed to start server");
     Ok(())
