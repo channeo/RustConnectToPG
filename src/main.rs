@@ -3,12 +3,7 @@ use actix_web::{web::{self, Data}, App, HttpServer};
 use dotenv::dotenv;
 use services::{fetch_users, fetch_user_articles, create_user_article};
 use sqlx::{postgres::PgPoolOptions, Pool, Postgres};
-
-
-
 mod services;
-
-
 pub struct AppState {
     pub db: Pool<Postgres>,
 }
